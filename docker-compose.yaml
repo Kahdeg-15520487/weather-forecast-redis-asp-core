@@ -1,0 +1,19 @@
+version: '3.4'
+
+services:
+  remote_weather_api:
+    image: remote-weather-api
+    build:
+      context: .
+      dockerfile: remote_weather_api/Dockerfile
+  redis_cache_api:
+    image: redis-cached-weather-api
+    restart: always
+    build:
+      context: .
+      dockerfile: research_redis_key_pattern_api/Dockerfile
+    depends_on:
+      - remote_weather_api
+      - redis
+  redis:
+    image: redis

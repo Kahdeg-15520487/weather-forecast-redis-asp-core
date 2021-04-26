@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31129.286
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "research_redis_key_pattern_api", "research_redis_key_pattern_api\research_redis_key_pattern_api.csproj", "{49FC12A0-61F9-4197-9723-4256CED4EADF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "remote_weather_api", "remote_weather_api\remote_weather_api.csproj", "{F7697FEB-9560-4A75-8431-85B5149B0A92}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker-compose", "docker-compose", "{D00518B1-50BE-4D84-84F8-6F0E301CD31F}"
+	ProjectSection(SolutionItems) = preProject
+		docker-compose.override.yaml = docker-compose.override.yaml
+		docker-compose.yaml = docker-compose.yaml
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "core", "core\core.csproj", "{C5DF729B-9188-49DB-A9C5-EE683385EEBC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{49FC12A0-61F9-4197-9723-4256CED4EADF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{49FC12A0-61F9-4197-9723-4256CED4EADF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{49FC12A0-61F9-4197-9723-4256CED4EADF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{49FC12A0-61F9-4197-9723-4256CED4EADF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7697FEB-9560-4A75-8431-85B5149B0A92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7697FEB-9560-4A75-8431-85B5149B0A92}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7697FEB-9560-4A75-8431-85B5149B0A92}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7697FEB-9560-4A75-8431-85B5149B0A92}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C5DF729B-9188-49DB-A9C5-EE683385EEBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C5DF729B-9188-49DB-A9C5-EE683385EEBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C5DF729B-9188-49DB-A9C5-EE683385EEBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C5DF729B-9188-49DB-A9C5-EE683385EEBC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {841D52E5-E7C8-4950-BB3F-9102C6DEC491}
+	EndGlobalSection
+EndGlobal
