@@ -35,7 +35,7 @@ namespace research_redis_key_pattern_api.Services
         }
 
         public async Task<WeatherForecast> GetWeather(DateTime date)
-        {
+        { 
             DateTime dateWithoutTime = date.Date;
 
             string cacheKey = string.Format(cacheKeyTemplate, dateWithoutTime.Second);

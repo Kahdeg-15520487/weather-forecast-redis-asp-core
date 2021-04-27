@@ -32,14 +32,20 @@ namespace remote_weather_api
         {
             services.AddControllers();
 
+            services.AddStackExchangeRedisCache(option =>
+            {
+                option.Configuration = this.Configuration.GetConnectionString("redis"); // config["ConnectionString"]["AzureRedis"]
+            });
+
             services.AddTransient<IWeatherService, WeatherService>();
+            services.AddTransient<IDataService, DataService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             // custom log response middleware
-            //app.UseLogResponseMiddlewares();
+            app.UseLogResponseMiddlewares();
 
             if (env.IsDevelopment())
             {

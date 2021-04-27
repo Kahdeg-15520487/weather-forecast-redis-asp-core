@@ -11,13 +11,6 @@ using System.Threading.Tasks;
 
 namespace research_redis_key_pattern_api.Controllers
 {
-    /*
-     * get weather from a service
-     * 
-     * 
-     * 
-     * 
-     */
     [ApiController]
     [Route("api/weather")]
     public class CachedWeatherForecastController : ControllerBase

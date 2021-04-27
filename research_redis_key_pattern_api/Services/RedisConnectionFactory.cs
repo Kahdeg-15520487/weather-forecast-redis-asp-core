@@ -19,12 +19,9 @@ namespace research_redis_key_pattern_api.Services
     public class RedisConnectionFactory : IRedisConnectionFactory
     {
         /// <summary>
-        ///     The _connection.
+        /// The redis connection.
         /// </summary>
         private readonly Lazy<ConnectionMultiplexer> _connection;
-
-
-        private readonly IOptions<RedisConfiguration> redis;
 
         public RedisConnectionFactory(IOptions<RedisConfiguration> redis)
         {

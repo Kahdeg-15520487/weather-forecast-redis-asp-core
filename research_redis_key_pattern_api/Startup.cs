@@ -44,16 +44,20 @@ namespace research_redis_key_pattern_api
                 c.BaseAddress = new Uri(this.Configuration.GetConnectionString("remote"));
             });
 
-            services.AddTransient<IRemoteWeatherServiceProxy, RemoteWeatherServiceProxy>();
+            services.AddTransient<IHttpClientWrapper, HttpClientWrapper>();
 
             services.AddSingleton<IRedisConnectionFactory, RedisConnectionFactory>();
+            services.AddTransient<IDistributedCacheWrapper, DistributedCacheWrapper>();
+
+            services.AddTransient<IRemoteWeatherServiceProxy, RemoteWeatherServiceProxy>();
+            services.AddTransient<IRemoteDataService, RemoteDataService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             // custom log response middleware
-            //app.UseLogResponseMiddlewares();
+            app.UseLogResponseMiddlewares();
 
             if (env.IsDevelopment())
             {
