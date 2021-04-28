@@ -73,6 +73,7 @@ namespace research_redis_key_pattern_api.Services
         /// <inheritdoc/>
         public async IAsyncEnumerable<string> GetStringManyAsync(string[] keys)
         {
+            //TODO use redis string instead of IDistributedCache
             IDatabase db = this.redisConnectionFactory.Connection().GetDatabase();
 
             foreach (string key in keys)

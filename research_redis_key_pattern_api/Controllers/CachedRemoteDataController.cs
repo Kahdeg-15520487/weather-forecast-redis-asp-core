@@ -25,15 +25,33 @@ namespace research_redis_key_pattern_api.Controllers
         }
 
         [HttpGet("{tenantId}/segments")]
-        public async Task<IActionResult> Get(Guid tenantId)
+        public async Task<IActionResult> GetSegments(Guid tenantId)
         {
             return Ok(await this.remoteDataService.GetSegments(tenantId));
         }
 
+        [HttpGet("{tenantId}/segments/{segmentId}")]
+        public async Task<IActionResult> GetSegment(Guid tenantId, Guid segmentId)
+        {
+            return Ok(await this.remoteDataService.GetSegment(tenantId, segmentId));
+        }
+
         [HttpGet("{tenantId}/segments/{segmentId}/updates")]
-        public async Task<IActionResult> Get(Guid tenantId, Guid segmentId)
+        public async Task<IActionResult> GetUpdates(Guid tenantId, Guid segmentId)
         {
             return Ok(await this.remoteDataService.GetSegmentUpdatesBySegment(tenantId, segmentId));
+        }
+
+        [HttpGet("{tenantId}/updates")]
+        public async Task<IActionResult> GetUpdatesByTenant(Guid tenantId)
+        {
+            return Ok(await this.remoteDataService.GetSegmentUpdatesByTenant(tenantId));
+        }
+
+        [HttpGet("{tenantId}/updates/{updateId}")]
+        public async Task<IActionResult> GetUpdate(Guid tenantId, Guid updateId)
+        {
+            return Ok(await this.remoteDataService.GetSegmentUpdateByTenant(tenantId, updateId));
         }
     }
 }

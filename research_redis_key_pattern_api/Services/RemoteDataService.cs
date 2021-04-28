@@ -7,6 +7,8 @@ using research_redis_key_pattern.core.DataDto;
 
 using research_redis_key_pattern_api.Services.Contracts;
 
+using StackExchange.Redis;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,12 +48,14 @@ namespace research_redis_key_pattern_api.Services
          */
 
         static readonly string tenantCacheKeyTemplate = "tenant:{0}";
-        static readonly string segmentCacheKeyTemplate = "tenant:{0}:segment:{1}";
-        static readonly string segmentUpdateCacheKeyTemplate = "tenant:{0}:update:{1}";
+        static readonly string segmentCacheKeyTemplate = "segment:{0}";
+        static readonly string segmentUpdateCacheKeyTemplate = "update:{0}";
 
-        static readonly string tenant_to_SegmentSetCacheKeyTemplate = "tenant:{0}:segment";
-        static readonly string segment_To_segmentUpdateSetCacheKeyTemplate = "segment:{0}:update";
-        static readonly string segmentUpdate_To_SegmentSetCacheKeyTemplate = "update:{0}:segment";
+        static readonly string tenant_To_segmentSetCacheKeyTemplate = "tenant:{0}:segments";
+        static readonly string segment_To_segmentUpdateSetCacheKeyTemplate = "segment:{0}:updates";
+        static readonly string segmentUpdate_To_segmentSetCacheKeyTemplate = "update:{0}:segments";
+
+        static readonly string tenant_To_segmentUpdateSetCacheKeyTemplate = "tenant:{0}:udpates";
 
         private readonly IDistributedCacheWrapper distributedCacheWrapper;
         private readonly HttpClient httpClient;
@@ -76,16 +80,22 @@ namespace research_redis_key_pattern_api.Services
         public async Task<IEnumerable<Segment>> GetSegments(Guid tenantId)
         {
             await this.CheckCache(tenantId);
-            string tenant_To_SegmentCacheKey = string.Format(tenant_to_SegmentSetCacheKeyTemplate, tenantId);
-            IEnumerable<string> segmentCacheKeys = (await this.distributedCacheWrapper.SetGet(tenant_To_SegmentCacheKey)).Select(s => string.Format(segmentCacheKeyTemplate, tenantId, s)).ToList();
-            return await this.distributedCacheWrapper.GetStringManyAsync(segmentCacheKeys.ToArray()).Select(s => JsonConvert.DeserializeObject<Segment>(s)).ToListAsync();
+            string tenant_To_SegmentCacheKey = string.Format(tenant_To_segmentSetCacheKeyTemplate, tenantId);
+            IEnumerable<string> segmentCacheKeys =
+                (await this.distributedCacheWrapper.SetGet(tenant_To_SegmentCacheKey))
+                                                   .Select(s => string.Format(segmentCacheKeyTemplate, s))
+                                                   .ToList();
+            return await this.distributedCacheWrapper.GetStringManyAsync(segmentCacheKeys.ToArray())
+                                                     .Select(s => JsonConvert.DeserializeObject<Segment>(s))
+                                                     .ToListAsync();
         }
 
         /// <inheritdoc/>
         public async Task<Segment> GetSegment(Guid tenantId, Guid segmentId)
         {
             await this.CheckCache(tenantId);
-            var segmentCacheKey = string.Format(segmentCacheKeyTemplate, tenantId, segmentId);
+            string segmentCacheKey = string.Format(segmentCacheKeyTemplate, segmentId);
+            //TODO check relationship tenant to segment
             return JsonConvert.DeserializeObject<Segment>(await distributedCacheWrapper.GetStringAsync(segmentCacheKey));
         }
 
@@ -93,12 +103,25 @@ namespace research_redis_key_pattern_api.Services
         public async Task<IEnumerable<SegmentUpdate>> GetSegmentUpdatesBySegment(Guid tenantId, Guid segmentId)
         {
             await this.CheckCache(tenantId);
-            var segment_To_segmentUpdateCacheKey = string.Format(segment_To_segmentUpdateSetCacheKeyTemplate, segmentId);
+            string segment_To_segmentUpdateCacheKey = string.Format(segment_To_segmentUpdateSetCacheKeyTemplate, segmentId);
             IEnumerable<string> segmentUpdateCacheKeys =
                 (await this.distributedCacheWrapper.SetGet(segment_To_segmentUpdateCacheKey))
-                                                   .Select(u => string.Format(segmentUpdateCacheKeyTemplate, tenantId, u))
+                                                   .Select(u => string.Format(segmentUpdateCacheKeyTemplate, u))
                                                    .ToList();
             logger.LogInformation(JsonConvert.SerializeObject(segmentUpdateCacheKeys));
+            return await this.distributedCacheWrapper.GetStringManyAsync(segmentUpdateCacheKeys.ToArray())
+                                                     .Select(u => JsonConvert.DeserializeObject<SegmentUpdate>(u))
+                                                     .ToListAsync();
+        }
+
+        public async Task<IEnumerable<SegmentUpdate>> GetSegmentUpdatesByTenant(Guid tenantId)
+        {
+            await this.CheckCache(tenantId);
+            var tenant_To_segmentUpdateCacheKey = string.Format(tenant_To_segmentUpdateSetCacheKeyTemplate, tenantId);
+            IEnumerable<string> segmentUpdateCacheKeys =
+                (await this.distributedCacheWrapper.SetGet(tenant_To_segmentUpdateCacheKey))
+                                                   .Select(u => string.Format(segmentUpdateCacheKeyTemplate, u))
+                                                   .ToList();
             return await this.distributedCacheWrapper.GetStringManyAsync(segmentUpdateCacheKeys.ToArray())
                                                      .Select(u => JsonConvert.DeserializeObject<SegmentUpdate>(u))
                                                      .ToListAsync();
@@ -108,7 +131,7 @@ namespace research_redis_key_pattern_api.Services
         public async Task<SegmentUpdate> GetSegmentUpdateByTenant(Guid tenantId, Guid updateId)
         {
             await this.CheckCache(tenantId);
-            var segmentUpdateCacheKey = string.Format(segmentUpdateCacheKeyTemplate, tenantId, updateId);
+            string segmentUpdateCacheKey = string.Format(segmentUpdateCacheKeyTemplate, updateId);
             return JsonConvert.DeserializeObject<SegmentUpdate>(await distributedCacheWrapper.GetStringAsync(segmentUpdateCacheKey));
         }
 
@@ -133,9 +156,9 @@ namespace research_redis_key_pattern_api.Services
             StringBuilder sb = new StringBuilder();
             foreach (var segment in data.Segments)
             {
-                var segmentCacheKey = string.Format(segmentCacheKeyTemplate, segment.TenantId, segment.SegmentId);
+                var segmentCacheKey = string.Format(segmentCacheKeyTemplate, segment.SegmentId);
                 var tenantCacheKey = string.Format(tenantCacheKeyTemplate, segment.TenantId);
-                var tenant_To_SegmentCacheKey = string.Format(tenant_to_SegmentSetCacheKeyTemplate, segment.TenantId);
+                var tenant_To_SegmentCacheKey = string.Format(tenant_To_segmentSetCacheKeyTemplate, segment.TenantId);
                 var segment_To_segmentUpdateCacheKey = string.Format(segment_To_segmentUpdateSetCacheKeyTemplate, segment.SegmentId);
 
                 sb.AppendFormat("segment: {0}\r\n", segmentCacheKey);
@@ -150,12 +173,15 @@ namespace research_redis_key_pattern_api.Services
 
                 foreach (var update in data.Updates.Where(u => segment.SegmentUpdateIds.Contains(u.SegmentUpdateId)))
                 {
-                    var segmentUpdateCacheKey = string.Format(segmentUpdateCacheKeyTemplate, segment.TenantId, update.SegmentUpdateId);
-                    var segmentUpdate_To_segmentCacheKey = string.Format(tenant_to_SegmentSetCacheKeyTemplate, update.SegmentUpdateId);
+                    var segmentUpdateCacheKey = string.Format(segmentUpdateCacheKeyTemplate, update.SegmentUpdateId);
+                    var segmentUpdate_To_segmentCacheKey = string.Format(segmentUpdate_To_segmentSetCacheKeyTemplate, update.SegmentUpdateId);
+                    var tenant_To_segmentUpdateCacheKey = string.Format(tenant_To_segmentUpdateSetCacheKeyTemplate, segment.TenantId);
                     sb.AppendFormat("segment: {0}\r\n", segmentCacheKey);
                     sb.AppendFormat("update-segment: {0}\r\n", segmentUpdate_To_segmentCacheKey);
+                    sb.AppendFormat("tenant-update: {0}\r\n", tenant_To_segmentUpdateCacheKey);
                     await distributedCacheWrapper.SetStringAsync(segmentUpdateCacheKey, JsonConvert.SerializeObject(update));
                     await distributedCacheWrapper.SetAdd(segmentUpdate_To_segmentCacheKey, update.SegmentIds.Select(sid => sid.ToString()).ToArray());
+                    await distributedCacheWrapper.SetAdd(tenant_To_segmentUpdateCacheKey, update.SegmentUpdateId.ToString());
                 }
             }
             logger.LogInformation(sb.ToString());

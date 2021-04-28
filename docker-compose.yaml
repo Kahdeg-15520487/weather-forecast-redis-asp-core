@@ -3,6 +3,7 @@ version: '3.4'
 services:
   remote_weather_api:
     image: remote-weather-api
+    restart: always
     build:
       context: .
       dockerfile: remote_weather_api/Dockerfile
@@ -17,3 +18,4 @@ services:
       - redis
   redis:
     image: redis
+    restart: always

@@ -39,5 +39,7 @@ namespace research_redis_key_pattern_api.Services.Contracts
         /// <param name="updateId">Segment's Id.</param>
         /// <returns>serialized object.</returns>
         Task<SegmentUpdate> GetSegmentUpdateByTenant(Guid tenantId, Guid updateId);
+
+        Task<IEnumerable<SegmentUpdate>> GetSegmentUpdatesByTenant(Guid tenantId);
     }
 }
