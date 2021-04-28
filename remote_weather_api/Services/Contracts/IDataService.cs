@@ -11,6 +11,6 @@ namespace remote_weather_api.Services.Contracts
     {
         IEnumerable<Segment> GetSegments();
         IEnumerable<SegmentUpdate> GetSegmentUpdate(Guid segmentId);
-        (IEnumerable<Segment> segments, IEnumerable<SegmentUpdate> segmentUpdates) FetchData();
+        (IEnumerable<Segment> segments, IEnumerable<SegmentUpdate> segmentUpdates, IEnumerable<Inspection> inspections) FetchData();
     }
 }

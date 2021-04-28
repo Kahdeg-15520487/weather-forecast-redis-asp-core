@@ -8,5 +8,7 @@ namespace research_redis_key_pattern.core.DataDto
     {
         public ICollection<Segment> Segments { get; set; }
         public ICollection<SegmentUpdate> Updates { get; set; }
+
+        public ICollection<Inspection> Inspections { get; set; }
     }
 }

@@ -24,10 +24,22 @@ namespace research_redis_key_pattern_api.Controllers
             _logger = logger;
         }
 
-        [HttpGet("{tenantId}/segments")]
-        public async Task<IActionResult> GetSegments(Guid tenantId)
+        [HttpGet("{tenantId}")]
+        public async Task<IActionResult> GetTenant(Guid tenantId)
         {
-            return Ok(await this.remoteDataService.GetSegments(tenantId));
+            var result = new
+            {
+                segments = await this.remoteDataService.GetSegmentsByTenant(tenantId),
+                updates = await this.remoteDataService.GetSegmentUpdatesByTenant(tenantId),
+                inspections = await this.remoteDataService.GetInspectionsByTenant(tenantId),
+            };
+            return Ok(result);
+        }
+
+        [HttpGet("{tenantId}/segments")]
+        public async Task<IActionResult> GetSegmentsByTenant(Guid tenantId)
+        {
+            return Ok(await this.remoteDataService.GetSegmentsByTenant(tenantId));
         }
 
         [HttpGet("{tenantId}/segments/{segmentId}")]
@@ -37,9 +49,15 @@ namespace research_redis_key_pattern_api.Controllers
         }
 
         [HttpGet("{tenantId}/segments/{segmentId}/updates")]
-        public async Task<IActionResult> GetUpdates(Guid tenantId, Guid segmentId)
+        public async Task<IActionResult> GetUpdatesBySegment(Guid tenantId, Guid segmentId)
         {
             return Ok(await this.remoteDataService.GetSegmentUpdatesBySegment(tenantId, segmentId));
+        }
+
+        [HttpGet("{tenantId}/segments/{segmentId}/inspections")]
+        public async Task<IActionResult> GetInspectionsBySegment(Guid tenantId, Guid segmentId)
+        {
+            return Ok(await this.remoteDataService.GetInspectionsBySegment(tenantId, segmentId));
         }
 
         [HttpGet("{tenantId}/updates")]
@@ -48,10 +66,10 @@ namespace research_redis_key_pattern_api.Controllers
             return Ok(await this.remoteDataService.GetSegmentUpdatesByTenant(tenantId));
         }
 
-        [HttpGet("{tenantId}/updates/{updateId}")]
-        public async Task<IActionResult> GetUpdate(Guid tenantId, Guid updateId)
+        [HttpGet("{tenantId}/inspections")]
+        public async Task<IActionResult> GetInspectionsByTenant(Guid tenantId)
         {
-            return Ok(await this.remoteDataService.GetSegmentUpdateByTenant(tenantId, updateId));
+            return Ok(await this.remoteDataService.GetInspectionsByTenant(tenantId));
         }
     }
 }

@@ -4,11 +4,12 @@ using System.Text;
 
 namespace research_redis_key_pattern.core.DataDto
 {
-    public class SegmentUpdate
+    public class Inspection
     {
-        public Guid SegmentUpdateId { get; set; }
-        public string SegmentUpdateName { get; set; }
         public Guid InspectionId { get; set; }
+        public string InspctionName { get; set; }
+
+        public Guid SegmentUpdateId { get; set; }
         public ICollection<Guid> SegmentIds { get; set; }
     }
 }

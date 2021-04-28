@@ -10,5 +10,6 @@ namespace research_redis_key_pattern.core.DataDto
         public Guid TenantId { get; set; }
         public string SegmentName { get; set; }
         public ICollection<Guid> SegmentUpdateIds { get; set; }
+        public ICollection<Guid> InspectionIds { get; set; }
     }
 }

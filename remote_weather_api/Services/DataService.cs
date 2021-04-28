@@ -18,6 +18,7 @@ namespace remote_weather_api.Services
     {
         static readonly string segmentCacheKeyTemplate = "segment:{0}";
         static readonly string segmentUpdateCacheKeyTemplate = "update:{0}";
+        static readonly string inspectionCacheKeyTemplate = "inspection:{0}";
 
         private readonly Random rnd;
         private readonly IDistributedCache distributedCache;
@@ -44,13 +45,14 @@ namespace remote_weather_api.Services
                    select su;
         }
 
-        public (IEnumerable<Segment> segments, IEnumerable<SegmentUpdate> segmentUpdates) FetchData()
+        public (IEnumerable<Segment> segments, IEnumerable<SegmentUpdate> segmentUpdates, IEnumerable<Inspection> inspections) FetchData()
         {
             if (IsDataCached(this.distributedCache))
             {
                 logger.LogInformation("fetching from cache");
-                var segmentIds = Enumerable.Range(0, 10).Select(idx => GetGuid(rnd));
+                var segmentIds = Enumerable.Range(0, 20).Select(idx => GetGuid(rnd));
                 var segmentUpdateIds = Enumerable.Range(0, 10).Select(idx => GetGuid(rnd));
+                var inspectionIds = Enumerable.Range(0, 10).Select(idx => GetGuid(rnd));
                 var segments = segmentIds.Select(sid =>
                 {
                     var cacheKey = string.Format(segmentCacheKeyTemplate, sid);
@@ -61,12 +63,17 @@ namespace remote_weather_api.Services
                     var cacheKey = string.Format(segmentUpdateCacheKeyTemplate, suid);
                     return JsonConvert.DeserializeObject<SegmentUpdate>(distributedCache.GetString(cacheKey));
                 }).ToList();
-                return (segments, segmentUpdates);
+                var inspections = inspectionIds.Select(iid =>
+                {
+                    var cacheKey = string.Format(inspectionCacheKeyTemplate, iid);
+                    return JsonConvert.DeserializeObject<Inspection>(distributedCache.GetString(cacheKey));
+                }).ToList();
+                return (segments, segmentUpdates, inspections);
             }
             else
             {
                 logger.LogInformation("updating cache");
-                (IEnumerable<Segment> segments, IEnumerable<SegmentUpdate> segmentUpdates) data = GenData(rnd);
+                (IEnumerable<Segment> segments, IEnumerable<SegmentUpdate> segmentUpdates, IEnumerable<Inspection> inspections) data = GenData(rnd);
                 foreach (var segment in data.segments)
                 {
                     var cacheKey = string.Format(segmentCacheKeyTemplate, segment.SegmentId);
@@ -76,6 +83,11 @@ namespace remote_weather_api.Services
                 {
                     var cacheKey = string.Format(segmentUpdateCacheKeyTemplate, segmentUpdate.SegmentUpdateId);
                     distributedCache.SetString(cacheKey, JsonConvert.SerializeObject(segmentUpdate));
+                }
+                foreach (var inspection in data.inspections)
+                {
+                    var cacheKey = string.Format(inspectionCacheKeyTemplate, inspection.InspectionId);
+                    distributedCache.SetString(cacheKey, JsonConvert.SerializeObject(inspection));
                 }
                 return data;
             }
@@ -88,13 +100,14 @@ namespace remote_weather_api.Services
             return distributedCache.GetString(cacheKey) != null;
         }
 
-        private static (IEnumerable<Segment> segments, IEnumerable<SegmentUpdate> segmentUpdates) GenData(Random r)
+        private static (IEnumerable<Segment> segments, IEnumerable<SegmentUpdate> segmentUpdates, IEnumerable<Inspection> inspections) GenData(Random r)
         {
-            List<Segment> segments = Enumerable.Range(0, 10).Select(idx => new Segment()
+            List<Segment> segments = Enumerable.Range(0, 20).Select(idx => new Segment()
             {
                 SegmentId = GetGuid(r),
                 SegmentName = $"segment#{idx}",
                 SegmentUpdateIds = new List<Guid>(),
+                InspectionIds = new List<Guid>(),
             }).ToList();
 
             List<SegmentUpdate> segmentUpdates = Enumerable.Range(0, 10).Select(idx => new SegmentUpdate()
@@ -104,19 +117,66 @@ namespace remote_weather_api.Services
                 SegmentIds = new List<Guid>(),
             }).ToList();
 
+            List<Inspection> inspections = Enumerable.Range(0, 10).Select(idx => new Inspection()
+            {
+                InspectionId = GetGuid(r),
+                InspctionName = $"inspection#{idx}",
+                SegmentIds = new List<Guid>(),
+            }).ToList();
+
+            List<Guid> tenantIds = Enumerable.Range(0, 5).Select(idx => GetGuid(r)).ToList();
+
+            //for (int i = 0; i < 20; i++)
+            //{
+            //    for (int j = 0; j < 10; j++)
+            //    {
+            //        segments[i].SegmentUpdateIds.Add(segmentUpdates[i].SegmentUpdateId);
+            //        segmentUpdates[i].SegmentIds.Add(segments[i].SegmentId);
+            //    }
+            //    segments[i].TenantId = GetGuid(r);
+            //    segments[i].SegmentUpdateIds = segments[i].SegmentUpdateIds.Distinct().ToList();
+            //    segmentUpdates[i].SegmentIds = segmentUpdates[i].SegmentIds.Distinct().ToList();
+            //}
+
+            //for (int i = 0; i < 10; i++)
+            //{
+            //    Guid tenantId = tenantIds[i / 2];
+            //    for (int j = 0; j < 20; j++)
+            //    {
+            //        segments[j].TenantId = tenantId;
+            //        segments[j].SegmentUpdateIds.Add(segmentUpdates[j/2].SegmentUpdateId);
+            //        segments[j].SegmentUpdateIds = segments[j].SegmentUpdateIds.Distinct().ToList();
+
+            //        segmentUpdates[i].SegmentIds.Add(segments[j/2].SegmentId);
+            //        inspections[i].SegmentIds.Add(segments[j/2].SegmentId);
+            //    }
+            //    segmentUpdates[i].SegmentIds = segmentUpdates[i].SegmentIds.Distinct().ToList();
+            //    inspections[i].SegmentIds = inspections[i].SegmentIds.Distinct().ToList();
+            //}
+
             for (int i = 0; i < 10; i++)
             {
-                for (int j = 0; j < 10; j++)
-                {
-                    segments[i].SegmentUpdateIds.Add(segmentUpdates[i].SegmentUpdateId);
-                    segmentUpdates[i].SegmentIds.Add(segments[i].SegmentId);
-                }
-                segments[i].TenantId = GetGuid(r);
-                segments[i].SegmentUpdateIds = segments[i].SegmentUpdateIds.Distinct().ToList();
-                segmentUpdates[i].SegmentIds = segmentUpdates[i].SegmentIds.Distinct().ToList();
+                Guid tenantId = tenantIds[i / 2];
+                segments[i * 2].TenantId = tenantId;
+                segments[i * 2 + 1].TenantId = tenantId;
+
+                segmentUpdates[i].SegmentIds.Add(segments[i * 2].SegmentId);
+                segmentUpdates[i].SegmentIds.Add(segments[i * 2 + 1].SegmentId);
+
+                segments[i * 2].SegmentUpdateIds.Add(segmentUpdates[i].SegmentUpdateId);
+                segments[i * 2 + 1].SegmentUpdateIds.Add(segmentUpdates[i].SegmentUpdateId);
+
+                inspections[i].SegmentIds.Add(segments[i * 2].SegmentId);
+                inspections[i].SegmentIds.Add(segments[i * 2 + 1].SegmentId);
+
+                segments[i * 2].InspectionIds.Add(inspections[i].InspectionId);
+                segments[i * 2 + 1].InspectionIds.Add(inspections[i].InspectionId);
+
+                segmentUpdates[i].InspectionId = inspections[i].InspectionId;
+                inspections[i].SegmentUpdateId = segmentUpdates[i].SegmentUpdateId;
             }
 
-            return (segments, segmentUpdates);
+            return (segments, segmentUpdates, inspections);
         }
 
         private static Guid GetGuid(Random r)

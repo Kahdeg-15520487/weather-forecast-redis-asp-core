@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.Caching.Distributed;
 
+using research_redis_key_pattern.core;
+
 using research_redis_key_pattern_api.Services.Contracts;
 
 using StackExchange.Redis;
@@ -15,182 +17,122 @@ namespace research_redis_key_pattern_api.Services
     public class DistributedCacheWrapper : IDistributedCacheWrapper
     {
         static readonly string tempSetCacheKeyTemplate = "temp:{0}";
-
-        private readonly IDistributedCache distributedCache;
+        static readonly TimeSpan tempSetCacheExpiryTimeSpan = new TimeSpan(1, 0, 0);
         private readonly IRedisConnectionFactory redisConnectionFactory;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DistributedCacheWrapper"/> class.
         /// </summary>
-        /// <param name="distributedCache">inject an instance of <see cref="IDistributedCache"/>.</param>
-        public DistributedCacheWrapper(IDistributedCache distributedCache, IRedisConnectionFactory redisConnectionFactory)
+        /// <param name="redisConnectionFactory">inject an instance of <see cref="IRedisConnectionFactory"/>.</param>
+        public DistributedCacheWrapper(IRedisConnectionFactory redisConnectionFactory)
         {
-            this.distributedCache = distributedCache;
             this.redisConnectionFactory = redisConnectionFactory;
         }
 
-        #region distributed cache
-        /// <inheritdoc/>
-        public string GetString(string key)
+        private IDatabase GetRedisDatabse()
         {
-            return this.distributedCache.GetString(key);
+
+            return this.redisConnectionFactory.Connection().GetDatabase();
+        }
+
+        #region string
+        public IEnumerable<string> StringGetMany(string[] keys)
+        {
+            return this.GetRedisDatabse().StringGet(keys.ToRedisKeys().ToArray()).ToStringArray();
+        }
+
+        public async Task<IEnumerable<string>> StringGetManyAsync(string[] keys)
+        {
+            return (await this.GetRedisDatabse().StringGetAsync(keys.ToRedisKeys().ToArray())).ToStringArray();
         }
 
         /// <inheritdoc/>
-        public async Task<string> GetStringAsync(string key, CancellationToken cancellationToken = default)
+        public string StringGet(string key)
         {
-            return await this.distributedCache.GetStringAsync(key, cancellationToken);
+            return this.GetRedisDatabse().StringGet(key);
         }
 
         /// <inheritdoc/>
-        public void SetString(string key, string value)
+        public async Task<string> StringGetAsync(string key)
         {
-            this.distributedCache.SetString(key, value);
+            return await this.GetRedisDatabse().StringGetAsync(key);
         }
 
         /// <inheritdoc/>
-        public void SetString(string key, string value, DistributedCacheEntryOptions options)
+        public void StringSet(string key, string value)
         {
-            this.distributedCache.SetString(key, value, options);
+            this.GetRedisDatabse().StringSet(key, value);
         }
 
         /// <inheritdoc/>
-        public async Task SetStringAsync(string key, string value, CancellationToken cancellationToken = default)
+        public void StringSet(string key, string value, TimeSpan expiryTime)
         {
-            await this.distributedCache.SetStringAsync(key, value, cancellationToken);
+            this.GetRedisDatabse().StringSet(key, value, expiryTime);
         }
 
         /// <inheritdoc/>
-        public async Task SetStringAsync(string key, string value, DistributedCacheEntryOptions options, CancellationToken cancellationToken = default)
+        public async Task StringSetAsync(string key, string value)
         {
-            await this.distributedCache.SetStringAsync(key, value, options, cancellationToken);
+            await this.GetRedisDatabse().StringSetAsync(key, value);
+        }
+
+        /// <inheritdoc/>
+        public async Task StringSetAsync(string key, string value, TimeSpan expiryTime)
+        {
+            await this.GetRedisDatabse().StringSetAsync(key, value, expiryTime);
         }
         #endregion
 
-        #region IDatabase
-
-        #region GetMany
-        /// <inheritdoc/>
-        public async IAsyncEnumerable<string> GetStringManyAsync(string[] keys)
-        {
-            //TODO use redis string instead of IDistributedCache
-            IDatabase db = this.redisConnectionFactory.Connection().GetDatabase();
-
-            foreach (string key in keys)
-            {
-                yield return await db.HashGetAsync(key, "data");
-            }
-        }
-        #endregion
         #region Hash
-        public async Task SetHash(string key, IEnumerable<KeyValuePair<string, string>> fields)
+        public async Task HashSet(string key, IEnumerable<KeyValuePair<string, string>> fields)
         {
-            IDatabase db = this.redisConnectionFactory.Connection().GetDatabase();
-
-            await db.HashSetAsync(key, GetHashEntries(fields).ToArray());
+            await this.GetRedisDatabse().HashSetAsync(key, fields.ToHashEntries().ToArray());
         }
 
-        public async Task<IEnumerable<KeyValuePair<string, string>>> GetHash(string key)
+        public async Task<IEnumerable<KeyValuePair<string, string>>> HashGet(string key)
         {
-            IDatabase db = this.redisConnectionFactory.Connection().GetDatabase();
-
-            return GetKeyValuePairs(await db.HashGetAllAsync(key));
+            return (await this.GetRedisDatabse().HashGetAllAsync(key)).ToKeyValuePairs();
         }
         #endregion
+
         #region Set
         public async Task SetAdd(string key, params string[] values)
         {
-            IDatabase db = this.redisConnectionFactory.Connection().GetDatabase();
-
-            await db.SetAddAsync(key, GetRedisValues(values).ToArray());
+            await this.GetRedisDatabse().SetAddAsync(key, values.ToRedisValueArray().ToArray());
         }
 
         public async Task<IEnumerable<string>> SetGet(string key)
         {
-            IDatabase db = this.redisConnectionFactory.Connection().GetDatabase();
-
-            return GetStrings(await db.SetMembersAsync(key));
+            return (await this.GetRedisDatabse().SetMembersAsync(key)).ToStringArray();
         }
 
-        public async Task<IEnumerable<string>> SetInter(string key1, string key2)
+        public async Task<IEnumerable<string>> SetIntersect(string key1, string key2)
         {
-            IDatabase db = this.redisConnectionFactory.Connection().GetDatabase();
-
-            return GetStrings(await db.SetCombineAsync(SetOperation.Intersect, key1, key2));
+            return (await this.GetRedisDatabse().SetCombineAsync(SetOperation.Intersect, key1, key2)).ToStringArray();
         }
         #endregion
+
         #region SortedSet
         public async Task SortedSetAdd(string key, Func<string, double> scoreCalc, params string[] values)
         {
-            IDatabase db = this.redisConnectionFactory.Connection().GetDatabase();
-
-            await db.SortedSetAddAsync(key, GetSortedSetEntries(values, scoreCalc).ToArray());
+            await this.GetRedisDatabse().SortedSetAddAsync(key, values.ToSortedSetEntries(scoreCalc).ToArray());
         }
 
-        public async Task<IEnumerable<string>> SortedSetGet(string key)
+        public async Task<IEnumerable<string>> SortedSetGet(string key, ScoreSortOrder scoreSortOrder = ScoreSortOrder.Ascending)
         {
-            IDatabase db = this.redisConnectionFactory.Connection().GetDatabase();
-
-            return GetStrings(await db.SortedSetRangeByRankAsync(key));
+            return (await this.GetRedisDatabse().SortedSetRangeByRankAsync(key, order: scoreSortOrder == ScoreSortOrder.Ascending ? Order.Ascending : Order.Descending))
+                    .ToStringArray();
         }
 
-        public async Task<IEnumerable<string>> SortedSetInter(string key1, string key2)
+        public async Task<IEnumerable<string>> SortedSetIntersect(string key1, string key2, ScoreSortOrder scoreSortOrder = ScoreSortOrder.Ascending)
         {
-            IDatabase db = this.redisConnectionFactory.Connection().GetDatabase();
             var tempCacheKey = string.Format(tempSetCacheKeyTemplate, Guid.NewGuid());
-            var count = await db.SortedSetCombineAndStoreAsync(SetOperation.Intersect, tempCacheKey, key1, key2);
-            return await SetGet(tempCacheKey);
-        }
-        #endregion
-        #endregion
-
-        #region helper
-        private IEnumerable<RedisKey> GetRedisKeys(string[] values)
-        {
-            foreach (string v in values)
+            if (!await this.GetRedisDatabse().KeyExistsAsync(tempCacheKey))
             {
-                yield return v;
+                await this.GetRedisDatabse().SortedSetCombineAndStoreAsync(SetOperation.Intersect, tempCacheKey, key1, key2);
+                await this.GetRedisDatabse().KeyExpireAsync(tempCacheKey, tempSetCacheExpiryTimeSpan);
             }
-        }
-
-        private IEnumerable<RedisValue> GetRedisValues(string[] values)
-        {
-            foreach (string v in values)
-            {
-                yield return v;
-            }
-        }
-
-        private IEnumerable<string> GetStrings(RedisValue[] values)
-        {
-            foreach (RedisValue v in values)
-            {
-                yield return v;
-            }
-        }
-
-        private IEnumerable<HashEntry> GetHashEntries(IEnumerable<KeyValuePair<string, string>> fields)
-        {
-            foreach (KeyValuePair<string, string> kvp in fields)
-            {
-                yield return new HashEntry(kvp.Key, kvp.Value);
-            }
-        }
-
-        private IEnumerable<KeyValuePair<string, string>> GetKeyValuePairs(IEnumerable<HashEntry> hashEntries)
-        {
-            foreach (HashEntry he in hashEntries)
-            {
-                yield return new KeyValuePair<string, string>(he.Name, he.Value);
-            }
-        }
-
-        private IEnumerable<SortedSetEntry> GetSortedSetEntries(string[] members, Func<string, double> scoreCalc)
-        {
-            foreach (var m in members)
-            {
-                yield return new SortedSetEntry(m, scoreCalc(m));
-            }
+            return await SortedSetGet(tempCacheKey, scoreSortOrder);
         }
         #endregion
     }

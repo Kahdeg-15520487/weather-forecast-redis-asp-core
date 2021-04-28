@@ -31,12 +31,13 @@ namespace remote_weather_api.Controllers
         public IActionResult Get()
         {
             logger.LogInformation("fetching all data");
-            (IEnumerable<Segment> segments, IEnumerable<SegmentUpdate> segmentUpdates) = this.dataService.FetchData();
+            (IEnumerable<Segment> segments, IEnumerable<SegmentUpdate> segmentUpdates, IEnumerable<Inspection> inspections) = this.dataService.FetchData();
 
             return Ok(new AllData()
             {
                 Segments = segments.ToList(),
                 Updates = segmentUpdates.ToList(),
+                Inspections = inspections.ToList(),
             });
         }
 

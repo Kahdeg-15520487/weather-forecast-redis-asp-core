@@ -14,7 +14,7 @@ namespace research_redis_key_pattern_api.Services.Contracts
         /// </summary>
         /// <param name="tenantId">Tenant's Id.</param>
         /// <returns>serialized object.</returns>
-        Task<IEnumerable<Segment>> GetSegments(Guid tenantId);
+        Task<IEnumerable<Segment>> GetSegmentsByTenant(Guid tenantId);
 
         /// <summary>
         /// Get segment.
@@ -25,7 +25,7 @@ namespace research_redis_key_pattern_api.Services.Contracts
         Task<Segment> GetSegment(Guid tenantId, Guid segmentId);
 
         /// <summary>
-        /// Get segment.
+        /// Get segment updates by segment.
         /// </summary>
         /// <param name="tenantId">Tenant's Id.</param>
         /// <param name="segmentId">Segment's Id.</param>
@@ -33,13 +33,25 @@ namespace research_redis_key_pattern_api.Services.Contracts
         Task<IEnumerable<SegmentUpdate>> GetSegmentUpdatesBySegment(Guid tenantId, Guid segmentId);
 
         /// <summary>
-        /// Get segment update by tenant.
+        /// Get segment updates by tenant
         /// </summary>
         /// <param name="tenantId">Tenant's Id.</param>
-        /// <param name="updateId">Segment's Id.</param>
         /// <returns>serialized object.</returns>
-        Task<SegmentUpdate> GetSegmentUpdateByTenant(Guid tenantId, Guid updateId);
-
         Task<IEnumerable<SegmentUpdate>> GetSegmentUpdatesByTenant(Guid tenantId);
+
+        /// <summary>
+        /// Get inspections by segment.
+        /// </summary>
+        /// <param name="tenantId">Tenant's Id.</param>
+        /// <param name="segmentId">Segment's Id.</param>
+        /// <returns>serialized object.</returns>
+        Task<IEnumerable<Inspection>> GetInspectionsBySegment(Guid tenantId, Guid segmentId);
+
+        /// <summary>
+        /// Get inspections by tenant.
+        /// </summary>
+        /// <param name="tenantId">Tenant's Id.</param>
+        /// <returns>serialized object.</returns>
+        Task<IEnumerable<Inspection>> GetInspectionsByTenant(Guid tenantId);
     }
 }
